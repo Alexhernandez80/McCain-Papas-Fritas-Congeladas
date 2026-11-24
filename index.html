@@ -185,6 +185,18 @@ function study(){
  }
  page.querySelectorAll('details button[data-status]').forEach(b=>b.dataset.c=b.closest('details').querySelector('summary').textContent);
 }
+function exportAlerts(alerts){
+ if(!alerts.length)return;
+ const rows=alerts.map(alert=>{
+   const survey=lookup[alert.id];
+   return [alert.id,alert.country,alert.coach,survey?.date,statusOf(survey??{}),
+     alert.group,alert.type,alert.level,alert.detail,alert.related,alert.meters];
+ });
+ downloadCsv('McCain_Alertas_'+D.cut+'.csv',[
+   ['ID de encuesta','País','Srvyr','Fecha','Estatus','Categoría','Regla','Prioridad','Detalle','ID relacionado','Metros'],
+   ...rows
+ ]);
+}
 function alerts(){
  const valid=new Set(rows().map(x=>x.id));
  const aa=D.alerts.filter(x=>valid.has(x.id));
@@ -209,10 +221,11 @@ function alerts(){
  const overview='<div class="alert-overview"><div class="alert-totals" role="status"><strong>'+f(uniqueCount(ar))+'</strong> <b>Encuestas únicas en la selección</b><span class="muted">· '+f(ar.length)+' alertas</span></div>'
    +'<h3>Encuestas por regla</h3>'
    +(ruleButtons?'<div class="alert-counts">'+ruleButtons+'</div><p class="muted">Pulsa una regla para ver sus casos. Una encuesta puede aparecer en varias reglas.</p>':'<p class="muted">Sin alertas para estos filtros.</p>')+'</div>';
- page.innerHTML='<h2>Alertas de validación</h2><section class="panel"><div class="line alert-filters"><label>Categoría<select id="ag">'+options(groups,'Todas')+'</select></label><label>Regla · cantidad de encuestas<select id="at">'+ruleOptions+'</select></label><label>Prioridad<select id="al">'+options(['Alta','Revisar','Pendiente','Contexto'],'Todas')+'</select></label></div>'+overview+table(['ID','País / Srvyr','Prioridad','Regla','Detalle','ID relacionado','Metros','Selfie'],ar.map(r=>[id(r.id),e(r.country)+'<br>'+e(r.coach),badge(r.level,r.level==='Alta'),e(r.type),e(r.detail),r.related?r.related.split(' · ').map(id).join(' '):'—',number(fixed(r.meters)),r.group==='Fotografía'?thumb(r.id):'—']))+'</section>'
+ page.innerHTML='<h2>Alertas de validación</h2><section class="panel"><div class="line alert-filters"><label>Categoría<select id="ag">'+options(groups,'Todas')+'</select></label><label>Regla · cantidad de encuestas<select id="at">'+ruleOptions+'</select></label><label>Prioridad<select id="al">'+options(['Alta','Revisar','Pendiente','Contexto'],'Todas')+'</select></label><button type="button" id="export-alerts"'+(ar.length?'':' disabled')+'>Descargar alertas (CSV)</button></div>'+overview+table(['ID','País / Srvyr','Prioridad','Regla','Detalle','ID relacionado','Metros','Selfie'],ar.map(r=>[id(r.id),e(r.country)+'<br>'+e(r.coach),badge(r.level,r.level==='Alta'),e(r.type),e(r.detail),r.related?r.related.split(' · ').map(id).join(' '):'—',number(fixed(r.meters)),r.group==='Fotografía'?thumb(r.id):'—']))+'</section>'
  +panel('Pares candidatos a reentrevista','<p class="muted">Se revisan coordenadas idénticas o coincidencias en direcciones con detalle de vivienda.</p>'+table(['IDs','Encuestadores','Fechas','Estatus y plazo','Indicio','Metros'],D.repeated.filter(r=>valid.has(r.a)||valid.has(r.b)).map(r=>[id(r.a)+' '+id(r.b),e(r.coachA)+'<br>'+e(r.coachB),date(r.dayA)+' / '+date(r.dayB),r.equal?badge('Mismo estatus crítico',true)+'<br>'+e(r.statusA)+' · '+date(r.dueA)+' / '+date(r.dueB):e(r.statusA+' / '+r.statusB),e(r.reason),number(fixed(r.meters))])))
  +panel('Selfie e identidad','<p>Las fotos permiten revisar rostro visible, fachada y reutilización exacta. Para verificar quién ejecutó las visitas, compare las evidencias agrupadas por Srvyr con supervisión.</p><button data-tab="3">Abrir galería por Srvyr</button>');
  page.querySelector('#ag').value=ag; page.querySelector('#at').value=at; page.querySelector('#al').value=al;
+ page.querySelector('#export-alerts').onclick=()=>exportAlerts(ar);
 }
 function plot(z,label){
  const vs=z.filter(r=>r.gps);if(!vs.length)return '';
